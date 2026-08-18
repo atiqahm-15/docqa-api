@@ -8,10 +8,19 @@ from pypdf.errors import PdfReadError
 
 from app import db
 from app.config import Settings, get_settings
-from app.dependencies import get_embeddings, get_vectorstore
+from app.dependencies import get_chat_model, get_embeddings, get_vectorstore
 from app.exceptions import ProviderUnavailableError
-from app.schemas import DocumentListItem, DocumentListResponse, DocumentUploadResponse
-from app.services import document_service
+from app.schemas import (
+    ChatHistoryResponse,
+    ChatMessageItem,
+    ChatRequest,
+    ChatResponse,
+    DocumentListItem,
+    DocumentListResponse,
+    DocumentUploadResponse,
+    SourceCitation,
+)
+from app.services import chat_service, document_service
 
 settings = get_settings()
 
@@ -101,3 +110,32 @@ def delete_document(
         document_service.delete_document_vectors(vectorstore, document_id)
         Path(row["file_path"]).unlink(missing_ok=True)
         db.delete_document(conn, document_id)
+
+
+@app.post("/chat", response_model=ChatResponse)
+def chat(
+    request: ChatRequest,
+    settings: Settings = Depends(get_settings),
+    chat_model=Depends(get_chat_model),
+    vectorstore=Depends(get_vectorstore),
+) -> ChatResponse:
+    with db.get_connection(settings.data_dir) as conn:
+        documents = db.list_documents(conn)
+    if not documents:
+        raise HTTPException(status_code=400, detail="No documents indexed yet. Upload a PDF first.")
+
+    session_id = request.session_id or uuid.uuid4().hex
+    history = chat_service.get_session_history(db.get_db_path(settings.data_dir), session_id)
+
+    try:
+        result = chat_service.answer_question(
+            vectorstore, chat_model, history, request.question, settings.retrieval_k
+        )
+    except Exception as exc:
+        raise ProviderUnavailableError("Gemini", str(exc)) from exc
+
+    return ChatResponse(
+        answer=result["answer"],
+        sources=[SourceCitation(**source) for source in result["sources"]],
+        session_id=session_id,
+    )

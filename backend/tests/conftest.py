@@ -19,7 +19,7 @@ def sample_pdf_path() -> Path:
 from fastapi.testclient import TestClient
 
 from app.config import Settings, get_settings
-from app.dependencies import get_embeddings
+from app.dependencies import get_chat_model, get_embeddings
 from app.main import app
 
 
