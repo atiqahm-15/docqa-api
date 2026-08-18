@@ -1,4 +1,5 @@
 import uuid
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +10,7 @@ from app import db
 from app.config import Settings, get_settings
 from app.dependencies import get_embeddings, get_vectorstore
 from app.exceptions import ProviderUnavailableError
-from app.schemas import DocumentUploadResponse
+from app.schemas import DocumentListItem, DocumentListResponse, DocumentUploadResponse
 from app.services import document_service
 
 settings = get_settings()
@@ -68,3 +69,35 @@ async def upload_document(
         db.insert_document(conn, document_id, file.filename, str(file_path), chunk_count)
 
     return DocumentUploadResponse(document_id=document_id, filename=file.filename, chunk_count=chunk_count)
+
+
+@app.get("/documents", response_model=DocumentListResponse)
+def list_documents(settings: Settings = Depends(get_settings)) -> DocumentListResponse:
+    with db.get_connection(settings.data_dir) as conn:
+        rows = db.list_documents(conn)
+    return DocumentListResponse(
+        documents=[
+            DocumentListItem(
+                document_id=row["document_id"],
+                filename=row["filename"],
+                uploaded_at=row["uploaded_at"],
+                chunk_count=row["chunk_count"],
+            )
+            for row in rows
+        ]
+    )
+
+
+@app.delete("/documents/{document_id}", status_code=204)
+def delete_document(
+    document_id: str,
+    settings: Settings = Depends(get_settings),
+    vectorstore=Depends(get_vectorstore),
+) -> None:
+    with db.get_connection(settings.data_dir) as conn:
+        row = db.get_document(conn, document_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Document not found.")
+        document_service.delete_document_vectors(vectorstore, document_id)
+        Path(row["file_path"]).unlink(missing_ok=True)
+        db.delete_document(conn, document_id)
