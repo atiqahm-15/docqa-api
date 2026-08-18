@@ -139,3 +139,14 @@ def chat(
         sources=[SourceCitation(**source) for source in result["sources"]],
         session_id=session_id,
     )
+
+
+@app.get("/chat/{session_id}/history", response_model=ChatHistoryResponse)
+def get_chat_history(session_id: str, settings: Settings = Depends(get_settings)) -> ChatHistoryResponse:
+    history = chat_service.get_session_history(db.get_db_path(settings.data_dir), session_id)
+    if not history.messages:
+        raise HTTPException(status_code=404, detail="Session not found.")
+    return ChatHistoryResponse(
+        session_id=session_id,
+        messages=[ChatMessageItem(role=m.type, content=m.content) for m in history.messages],
+    )

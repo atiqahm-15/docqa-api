@@ -41,3 +41,26 @@ def test_chat_reuses_provided_session_id(client, sample_pdf_path):
 
     assert second.status_code == 200
     assert second.json()["session_id"] == session_id
+
+
+def test_get_history_returns_messages_for_known_session(client, sample_pdf_path):
+    _upload_sample(client, sample_pdf_path)
+    client.app.dependency_overrides[get_chat_model] = lambda: FakeListChatModel(
+        responses=["LangChain helps build LLM apps."]
+    )
+    chat_response = client.post("/chat", json={"question": "What is LangChain?"})
+    session_id = chat_response.json()["session_id"]
+
+    response = client.get(f"/chat/{session_id}/history")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["session_id"] == session_id
+    assert len(body["messages"]) == 2
+    assert body["messages"][0]["role"] == "human"
+    assert body["messages"][1]["role"] == "ai"
+
+
+def test_get_history_returns_404_for_unknown_session(client):
+    response = client.get("/chat/nonexistent-session/history")
+    assert response.status_code == 404
