@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
+import ChatWindow from "./components/ChatWindow";
 import DocumentList from "./components/DocumentList";
 import UploadPanel from "./components/UploadPanel";
 import { deleteDocument, listDocuments } from "./api";
@@ -39,6 +40,10 @@ export default function App() {
           error={documentsError}
           onDelete={handleDelete}
         />
+      </section>
+      <section>
+        <h2>Chat</h2>
+        <ChatWindow hasDocuments={documents.length > 0} />
       </section>
     </div>
   );
