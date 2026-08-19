@@ -17,7 +17,7 @@ def test_chat_request_session_id_defaults_to_none():
 def test_chat_response_accepts_list_of_sources():
     response = ChatResponse(
         answer="It's about LangChain.",
-        sources=[SourceCitation(filename="a.pdf", page=1)],
+        sources=[SourceCitation(filename="a.pdf", page=1, snippet="LangChain is...")],
         session_id="sess-1",
     )
     assert response.sources[0].page == 1

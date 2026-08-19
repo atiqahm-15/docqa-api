@@ -71,8 +71,21 @@ def answer_question(
     history.add_user_message(question)
     history.add_ai_message(answer)
 
-    sources = [
-        {"filename": doc.metadata.get("filename", "unknown"), "page": doc.metadata.get("page", 0)}
-        for doc in retrieved_docs
-    ]
+    sources = []
+    seen = set()
+    for doc in retrieved_docs:
+        key = (doc.metadata.get("filename", "unknown"), doc.metadata.get("page", 0))
+        if key not in seen:
+            seen.add(key)
+            sources.append(
+                {"filename": key[0], "page": key[1], "snippet": _truncate(doc.page_content)}
+            )
+
     return {"answer": answer, "sources": sources}
+
+
+def _truncate(text: str, max_chars: int = 400) -> str:
+    text = text.strip()
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars].rstrip() + "…"

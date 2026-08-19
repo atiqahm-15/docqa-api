@@ -26,7 +26,9 @@ def test_answer_question_returns_answer_and_sources(tmp_path, fake_embeddings):
     result = chat_service.answer_question(vectorstore, chat_model, history, "What is LangChain?")
 
     assert result["answer"] == "LangChain helps build LLM apps."
-    assert result["sources"] == [{"filename": "a.pdf", "page": 1}]
+    assert result["sources"] == [
+        {"filename": "a.pdf", "page": 1, "snippet": "LangChain builds LLM apps."}
+    ]
 
 
 def test_answer_question_persists_turn_to_history(tmp_path, fake_embeddings):
@@ -55,6 +57,31 @@ def test_answer_question_uses_history_on_second_turn(tmp_path, fake_embeddings):
 
     assert result["answer"] == "Second answer."
     assert len(history.messages) == 4
+
+
+def test_answer_question_dedupes_sources_from_same_page(tmp_path, fake_embeddings):
+    vectorstore = Chroma(
+        collection_name="test-chat-dedup",
+        embedding_function=fake_embeddings,
+        persist_directory=str(tmp_path / "chroma"),
+    )
+    vectorstore.add_documents(
+        [
+            Document(page_content="LangChain builds LLM apps.", metadata={"document_id": "d1", "filename": "a.pdf", "page": 1}),
+            Document(page_content="LangChain also does chains.", metadata={"document_id": "d1", "filename": "a.pdf", "page": 1}),
+            Document(page_content="LangChain has agents too.", metadata={"document_id": "d1", "filename": "a.pdf", "page": 2}),
+        ],
+        ids=["d1-0", "d1-1", "d1-2"],
+    )
+    chat_model = FakeListChatModel(responses=["LangChain helps build LLM apps."])
+    history = chat_service.get_session_history(tmp_path / "chat.db", "session-1")
+
+    result = chat_service.answer_question(vectorstore, chat_model, history, "What is LangChain?", k=3)
+
+    assert len(result["sources"]) == 2
+    pages = sorted((source["filename"], source["page"]) for source in result["sources"])
+    assert pages == [("a.pdf", 1), ("a.pdf", 2)]
+    assert all(source["snippet"] for source in result["sources"])
 
 
 def test_get_session_history_creates_data_dir_if_missing(tmp_path):

@@ -26,6 +26,7 @@ class ChatRequest(BaseModel):
 class SourceCitation(BaseModel):
     filename: str
     page: int
+    snippet: str
 
 
 class ChatResponse(BaseModel):
