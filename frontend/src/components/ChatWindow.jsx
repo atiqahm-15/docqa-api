@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { askQuestion, getChatHistory } from "../api";
-import { IconFile, IconRefresh, IconSend, IconSpark } from "../icons";
+import { IconClose, IconFile, IconRefresh, IconSend, IconSpark } from "../icons";
 
 const SESSION_STORAGE_KEY = "docqa-session-id";
 
@@ -11,6 +13,7 @@ export default function ChatWindow({ documentCount }) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
+  const [activeSource, setActiveSource] = useState(null);
 
   useEffect(() => {
     // Restore history once on mount if a session survived a page reload.
@@ -96,13 +99,21 @@ export default function ChatWindow({ documentCount }) {
               </span>
             )}
             <div className="chat-window__bubble-col">
-              <p>{message.content}</p>
+              <div className="chat-window__bubble">
+                {message.role === "ai" ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                ) : (
+                  <p>{message.content}</p>
+                )}
+              </div>
               {message.sources && message.sources.length > 0 && (
                 <ul className="chat-window__sources">
                   {message.sources.map((source, sourceIndex) => (
                     <li key={sourceIndex}>
-                      <IconFile />
-                      {source.filename} <span>· p.{source.page}</span>
+                      <button type="button" onClick={() => setActiveSource(source)}>
+                        <IconFile />
+                        {source.filename} <span>· p.{source.page}</span>
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -131,6 +142,28 @@ export default function ChatWindow({ documentCount }) {
           <IconSend />
         </button>
       </form>
+
+      {activeSource && (
+        <div className="source-modal__backdrop" onClick={() => setActiveSource(null)}>
+          <div className="source-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="source-modal__header">
+              <span className="source-modal__title">
+                <IconFile />
+                {activeSource.filename} · p.{activeSource.page}
+              </span>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => setActiveSource(null)}
+                aria-label="Close"
+              >
+                <IconClose />
+              </button>
+            </div>
+            <p className="source-modal__snippet">{activeSource.snippet}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

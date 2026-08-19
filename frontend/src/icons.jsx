@@ -65,6 +65,15 @@ export function IconSend(props) {
   );
 }
 
+export function IconClose(props) {
+  return (
+    <svg {...base} strokeWidth={2} {...props}>
+      <path d="M6 6l12 12" />
+      <path d="M18 6 6 18" />
+    </svg>
+  );
+}
+
 export function IconRefresh(props) {
   return (
     <svg {...base} {...props}>
