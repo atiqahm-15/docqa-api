@@ -55,6 +55,25 @@ Integration suite (hits the real Gemini API, needs `GOOGLE_API_KEY` set):
 pytest -m integration tests/integration -v
 ```
 
+## Deployment (optional)
+
+`Dockerfile` and `fly.toml` are included for deploying to
+[Fly.io](https://fly.io), with a persistent volume mounted at `/data` for
+Chroma, SQLite, and uploaded PDFs. Fly.io requires a payment method on file
+to create an app (usage for a project this small should stay within the
+free allowance). To deploy:
+
+```bash
+fly auth login
+fly apps create docqa-api-backend   # or pick your own name in fly.toml
+fly volumes create docqa_data --size 1 --region sin
+fly secrets set GOOGLE_API_KEY=your-key-here
+fly deploy
+```
+
+Update `ALLOWED_ORIGINS` in `fly.toml` to include your deployed frontend's
+URL once you have one, then redeploy.
+
 ## Known limitations (by design, for this learning project)
 
 - Single-user, no authentication.
