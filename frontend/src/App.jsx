@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import ChatWindow from "./components/ChatWindow";
 import DocumentList from "./components/DocumentList";
+import DocumentTabs from "./components/DocumentTabs";
 import UploadPanel from "./components/UploadPanel";
 import { deleteDocument, listDocuments } from "./api";
 import { IconBrand, IconSpark } from "./icons";
@@ -10,6 +11,7 @@ export default function App() {
   const [documents, setDocuments] = useState([]);
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [documentsError, setDocumentsError] = useState(null);
+  const [activeDocumentId, setActiveDocumentId] = useState(null);
 
   const refreshDocuments = useCallback(() => {
     setDocumentsLoading(true);
@@ -26,8 +28,13 @@ export default function App() {
 
   async function handleDelete(documentId) {
     await deleteDocument(documentId);
+    if (documentId === activeDocumentId) {
+      setActiveDocumentId(null);
+    }
     refreshDocuments();
   }
+
+  const activeDocument = documents.find((doc) => doc.document_id === activeDocumentId) ?? null;
 
   return (
     <div className="app">
@@ -50,6 +57,8 @@ export default function App() {
           loading={documentsLoading}
           error={documentsError}
           onDelete={handleDelete}
+          onSelect={setActiveDocumentId}
+          activeDocumentId={activeDocumentId}
         />
 
         <div className="sidebar-footer">
@@ -58,7 +67,19 @@ export default function App() {
         </div>
       </aside>
 
-      <ChatWindow documentCount={documents.length} />
+      <div className="chat-pane">
+        <DocumentTabs
+          documents={documents}
+          activeDocumentId={activeDocumentId}
+          onSelect={setActiveDocumentId}
+        />
+        <ChatWindow
+          key={activeDocumentId ?? "all"}
+          documentCount={documents.length}
+          documentId={activeDocumentId}
+          documentName={activeDocument?.filename ?? null}
+        />
+      </div>
     </div>
   );
 }

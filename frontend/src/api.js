@@ -32,11 +32,11 @@ export function deleteDocument(documentId) {
   return request(`/documents/${documentId}`, { method: "DELETE" });
 }
 
-export function askQuestion(question, sessionId) {
+export function askQuestion(question, sessionId, documentId) {
   return request("/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, session_id: sessionId }),
+    body: JSON.stringify({ question, session_id: sessionId, document_id: documentId ?? null }),
   });
 }
 

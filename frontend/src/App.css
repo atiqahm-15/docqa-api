@@ -149,6 +149,25 @@
   border-radius: 10px;
 }
 
+.document-list__item--active {
+  background: var(--accent-soft);
+}
+
+.document-list__select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-grow: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
 .doc-icon {
   width: 30px;
   height: 30px;
@@ -270,6 +289,57 @@
 .icon-btn svg {
   width: 16px;
   height: 16px;
+}
+
+/* ---------- Chat pane ---------- */
+
+.chat-pane {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.document-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 32px 0;
+  overflow-x: auto;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.document-tabs__tab {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: translateY(1px);
+}
+
+.document-tabs__tab:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.document-tabs__tab--active {
+  color: var(--accent-hover);
+  background: var(--surface);
+  border-color: var(--border);
+  border-bottom: 1px solid var(--surface);
 }
 
 /* ---------- Chat window ---------- */

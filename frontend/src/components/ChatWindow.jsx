@@ -4,11 +4,14 @@ import remarkGfm from "remark-gfm";
 import { askQuestion, getChatHistory } from "../api";
 import { IconClose, IconFile, IconRefresh, IconSend, IconSpark } from "../icons";
 
-const SESSION_STORAGE_KEY = "docqa-session-id";
+function sessionStorageKey(documentId) {
+  return documentId ? `docqa-session-id:doc:${documentId}` : "docqa-session-id:all";
+}
 
-export default function ChatWindow({ documentCount }) {
+export default function ChatWindow({ documentCount, documentId = null, documentName = null }) {
   const hasDocuments = documentCount > 0;
-  const [sessionId, setSessionId] = useState(() => localStorage.getItem(SESSION_STORAGE_KEY));
+  const storageKey = sessionStorageKey(documentId);
+  const [sessionId, setSessionId] = useState(() => localStorage.getItem(storageKey));
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -16,12 +19,14 @@ export default function ChatWindow({ documentCount }) {
   const [activeSource, setActiveSource] = useState(null);
 
   useEffect(() => {
-    // Restore history once on mount if a session survived a page reload.
+    // Restore history once on mount if a session survived a page reload
+    // (or a switch back to this tab — each tab is a fresh ChatWindow
+    // instance, keyed by documentId in the parent).
     // Deliberately NOT keyed on `sessionId` — handleSend also sets that
     // state after a successful reply, and refetching then would overwrite
     // the just-received message with history rows that lack `sources`
     // (the backend's history endpoint only returns role/content).
-    const storedSessionId = localStorage.getItem(SESSION_STORAGE_KEY);
+    const storedSessionId = localStorage.getItem(storageKey);
     if (!storedSessionId) {
       return;
     }
@@ -30,7 +35,7 @@ export default function ChatWindow({ documentCount }) {
         setMessages(history.messages.map((m) => ({ role: m.role, content: m.content })));
       })
       .catch(() => {
-        localStorage.removeItem(SESSION_STORAGE_KEY);
+        localStorage.removeItem(storageKey);
         setSessionId(null);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -46,11 +51,11 @@ export default function ChatWindow({ documentCount }) {
     setMessages((prev) => [...prev, { role: "human", content: question }]);
     setInput("");
     try {
-      const result = await askQuestion(question, sessionId);
+      const result = await askQuestion(question, sessionId, documentId);
       setMessages((prev) => [...prev, { role: "ai", content: result.answer, sources: result.sources }]);
       if (result.session_id !== sessionId) {
         setSessionId(result.session_id);
-        localStorage.setItem(SESSION_STORAGE_KEY, result.session_id);
+        localStorage.setItem(storageKey, result.session_id);
       }
     } catch (err) {
       setError(err.message);
@@ -65,7 +70,7 @@ export default function ChatWindow({ documentCount }) {
   }
 
   function handleNewSession() {
-    localStorage.removeItem(SESSION_STORAGE_KEY);
+    localStorage.removeItem(storageKey);
     setSessionId(null);
     setMessages([]);
     setError(null);
@@ -75,8 +80,12 @@ export default function ChatWindow({ documentCount }) {
     <div className="chat-window">
       <div className="topbar">
         <div>
-          <h2>Ask about your documents</h2>
-          <p>{documentCount} document{documentCount === 1 ? "" : "s"} indexed</p>
+          <h2>{documentName ? `Ask about ${documentName}` : "Ask about your documents"}</h2>
+          <p>
+            {documentName
+              ? "Answers are grounded in this document only."
+              : `${documentCount} document${documentCount === 1 ? "" : "s"} indexed`}
+          </p>
         </div>
         <button className="icon-btn" onClick={handleNewSession} title="Start a new session">
           <IconRefresh />
@@ -87,7 +96,7 @@ export default function ChatWindow({ documentCount }) {
         {messages.length === 0 && (
           <li className="chat-window__empty">
             {hasDocuments
-              ? "Start the conversation — ask a question about your documents."
+              ? `Start the conversation — ask a question about ${documentName ?? "your documents"}.`
               : "Upload a PDF to get started."}
           </li>
         )}
