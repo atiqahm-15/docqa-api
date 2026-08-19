@@ -7,7 +7,9 @@ import { chromium } from "playwright";
 const FRONTEND_URL = "http://localhost:5173";
 
 async function main() {
-  const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
+  // `npm install` downloads Playwright's own Chromium automatically. If you
+  // see "Executable doesn't exist", run `npx playwright install chromium`.
+  const browser = await chromium.launch();
   const page = await browser.newPage();
 
   // Mock the two Gemini-dependent endpoints so this runs without a real API key.
