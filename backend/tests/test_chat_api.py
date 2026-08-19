@@ -64,3 +64,31 @@ def test_get_history_returns_messages_for_known_session(client, sample_pdf_path)
 def test_get_history_returns_404_for_unknown_session(client):
     response = client.get("/chat/nonexistent-session/history")
     assert response.status_code == 404
+
+
+def test_chat_with_unknown_document_id_returns_404(client, sample_pdf_path):
+    _upload_sample(client, sample_pdf_path)
+
+    response = client.post(
+        "/chat", json={"question": "What is this about?", "document_id": "does-not-exist"}
+    )
+
+    assert response.status_code == 404
+
+
+def test_chat_scoped_to_document_id_returns_answer(client, sample_pdf_path):
+    upload = _upload_sample(client, sample_pdf_path)
+    document_id = upload.json()["document_id"]
+    client.app.dependency_overrides[get_chat_model] = lambda: FakeListChatModel(
+        responses=["LangChain helps build LLM apps."]
+    )
+
+    response = client.post(
+        "/chat",
+        json={"question": "What is LangChain?", "document_id": document_id},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["answer"] == "LangChain helps build LLM apps."
+    assert len(body["sources"]) >= 1

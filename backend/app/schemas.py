@@ -21,6 +21,7 @@ class DocumentListResponse(BaseModel):
 class ChatRequest(BaseModel):
     question: str
     session_id: str | None = None
+    document_id: str | None = None
 
 
 class SourceCitation(BaseModel):

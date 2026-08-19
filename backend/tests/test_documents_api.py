@@ -12,6 +12,21 @@ def test_upload_pdf_returns_document_id_and_chunk_count(client, sample_pdf_path)
     assert body["document_id"]
 
 
+def test_upload_sanitizes_path_traversal_filename(client, sample_pdf_path, test_settings):
+    with open(sample_pdf_path, "rb") as f:
+        response = client.post(
+            "/documents/upload",
+            files={"file": ("../../../../etc/evil.pdf", f, "application/pdf")},
+        )
+
+    assert response.status_code == 200
+    upload_dir = test_settings.data_dir / "uploads"
+    written_files = list(upload_dir.iterdir())
+    assert len(written_files) == 1
+    assert written_files[0].parent == upload_dir
+    assert ".." not in written_files[0].name
+
+
 def test_upload_rejects_non_pdf_file(client):
     response = client.post(
         "/documents/upload",

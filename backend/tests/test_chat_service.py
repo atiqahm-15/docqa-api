@@ -84,6 +84,29 @@ def test_answer_question_dedupes_sources_from_same_page(tmp_path, fake_embedding
     assert all(source["snippet"] for source in result["sources"])
 
 
+def test_answer_question_scopes_retrieval_to_document_id(tmp_path, fake_embeddings):
+    vectorstore = Chroma(
+        collection_name="test-chat-scoped",
+        embedding_function=fake_embeddings,
+        persist_directory=str(tmp_path / "chroma"),
+    )
+    vectorstore.add_documents(
+        [
+            Document(page_content="LangChain builds LLM apps.", metadata={"document_id": "d1", "filename": "a.pdf", "page": 1}),
+            Document(page_content="Completely unrelated content.", metadata={"document_id": "d2", "filename": "b.pdf", "page": 1}),
+        ],
+        ids=["d1-0", "d2-0"],
+    )
+    chat_model = FakeListChatModel(responses=["Answer scoped to d1."])
+    history = chat_service.get_session_history(tmp_path / "chat.db", "session-1")
+
+    result = chat_service.answer_question(
+        vectorstore, chat_model, history, "What is LangChain?", k=5, document_id="d1"
+    )
+
+    assert result["sources"] == [{"filename": "a.pdf", "page": 1, "snippet": "LangChain builds LLM apps."}]
+
+
 def test_get_session_history_creates_data_dir_if_missing(tmp_path):
     db_path = tmp_path / "nested" / "chat.db"
     history = chat_service.get_session_history(db_path, "session-1")

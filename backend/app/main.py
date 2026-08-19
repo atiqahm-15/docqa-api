@@ -1,5 +1,6 @@
+import logging
 import uuid
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,6 +22,9 @@ from app.schemas import (
     SourceCitation,
 )
 from app.services import chat_service, document_service
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 settings = get_settings()
 
@@ -44,6 +48,13 @@ def health() -> dict:
     return {"status": "ok"}
 
 
+def _sanitize_filename(filename: str) -> str:
+    """Reduce a client-supplied filename to a bare basename, so it can't
+    escape the upload directory via `../` or an absolute path."""
+    name = PurePosixPath(filename.replace("\\", "/")).name
+    return name or "upload.pdf"
+
+
 @app.post("/documents/upload", response_model=DocumentUploadResponse)
 async def upload_document(
     file: UploadFile,
@@ -57,7 +68,8 @@ async def upload_document(
     document_id = uuid.uuid4().hex
     upload_dir = settings.data_dir / "uploads"
     upload_dir.mkdir(parents=True, exist_ok=True)
-    file_path = upload_dir / f"{document_id}_{file.filename}"
+    safe_filename = _sanitize_filename(file.filename)
+    file_path = upload_dir / f"{document_id}_{safe_filename}"
     file_path.write_bytes(await file.read())
 
     try:
@@ -71,6 +83,7 @@ async def upload_document(
     try:
         chunk_count = document_service.embed_and_store(vectorstore, chunks)
     except Exception as exc:
+        logger.exception("Embedding failed for document_id=%s", document_id)
         file_path.unlink(missing_ok=True)
         raise ProviderUnavailableError("Gemini", str(exc)) from exc
 
@@ -120,18 +133,26 @@ def chat(
     vectorstore=Depends(get_vectorstore),
 ) -> ChatResponse:
     with db.get_connection(settings.data_dir) as conn:
-        documents = db.list_documents(conn)
-    if not documents:
-        raise HTTPException(status_code=400, detail="No documents indexed yet. Upload a PDF first.")
+        if request.document_id is not None:
+            if db.get_document(conn, request.document_id) is None:
+                raise HTTPException(status_code=404, detail="Document not found.")
+        elif not db.list_documents(conn):
+            raise HTTPException(status_code=400, detail="No documents indexed yet. Upload a PDF first.")
 
     session_id = request.session_id or uuid.uuid4().hex
     history = chat_service.get_session_history(db.get_db_path(settings.data_dir), session_id)
 
     try:
         result = chat_service.answer_question(
-            vectorstore, chat_model, history, request.question, settings.retrieval_k
+            vectorstore,
+            chat_model,
+            history,
+            request.question,
+            settings.retrieval_k,
+            document_id=request.document_id,
         )
     except Exception as exc:
+        logger.exception("Answer generation failed for session_id=%s", session_id)
         raise ProviderUnavailableError("Gemini", str(exc)) from exc
 
     return ChatResponse(

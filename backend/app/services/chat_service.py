@@ -49,10 +49,14 @@ def answer_question(
     history: SQLChatMessageHistory,
     question: str,
     k: int = 4,
+    document_id: str | None = None,
 ) -> dict:
     standalone_question = _contextualize_question(chat_model, question, history.messages)
 
-    retriever = vectorstore.as_retriever(search_kwargs={"k": k})
+    search_kwargs = {"k": k}
+    if document_id is not None:
+        search_kwargs["filter"] = {"document_id": document_id}
+    retriever = vectorstore.as_retriever(search_kwargs=search_kwargs)
     retrieved_docs = retriever.invoke(standalone_question)
     context = _format_docs(retrieved_docs)
 
