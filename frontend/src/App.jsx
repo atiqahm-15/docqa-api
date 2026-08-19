@@ -4,6 +4,7 @@ import ChatWindow from "./components/ChatWindow";
 import DocumentList from "./components/DocumentList";
 import UploadPanel from "./components/UploadPanel";
 import { deleteDocument, listDocuments } from "./api";
+import { IconBrand, IconSpark } from "./icons";
 
 export default function App() {
   const [documents, setDocuments] = useState([]);
@@ -30,21 +31,34 @@ export default function App() {
 
   return (
     <div className="app">
-      <h1>Document Q&amp;A</h1>
-      <section>
-        <h2>Documents</h2>
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brand-mark">
+            <IconBrand />
+          </div>
+          <div className="brand-text">
+            <h1>DocQA</h1>
+            <p>Chat with your PDFs</p>
+          </div>
+        </div>
+
         <UploadPanel onUploadSuccess={refreshDocuments} />
+
+        <div className="section-label">Documents · {documents.length}</div>
         <DocumentList
           documents={documents}
           loading={documentsLoading}
           error={documentsError}
           onDelete={handleDelete}
         />
-      </section>
-      <section>
-        <h2>Chat</h2>
-        <ChatWindow hasDocuments={documents.length > 0} />
-      </section>
+
+        <div className="sidebar-footer">
+          <IconSpark />
+          Powered by Google Gemini
+        </div>
+      </aside>
+
+      <ChatWindow documentCount={documents.length} />
     </div>
   );
 }

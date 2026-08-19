@@ -56,9 +56,9 @@ async function main() {
 
   // Chat flow.
   await page.fill('input[placeholder*="Ask a question"]', "What is this about?");
-  await page.click("text=Ask");
+  await page.click(".chat-window__send");
   await page.waitForSelector("text=This document is about LangChain.");
-  await page.waitForSelector("text=sample.pdf, p.1");
+  await page.waitForSelector(".chat-window__sources");
   console.log("✓ chat renders answer with source citation");
 
   // Session persistence across reload.

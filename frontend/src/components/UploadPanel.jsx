@@ -1,50 +1,53 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { uploadDocument } from "../api";
+import { IconUpload } from "../icons";
 
 export default function UploadPanel({ onUploadSuccess }) {
-  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
-  function handleFileChange(event) {
-    setSelectedFile(event.target.files[0] ?? null);
-    setError(null);
-    setSuccessMessage(null);
-  }
-
-  async function handleUpload() {
-    if (!selectedFile) {
+  async function handleFileChange(event) {
+    const file = event.target.files[0] ?? null;
+    if (!file) {
       return;
     }
     setUploading(true);
     setError(null);
     setSuccessMessage(null);
     try {
-      const result = await uploadDocument(selectedFile);
+      const result = await uploadDocument(file);
       setSuccessMessage(`Uploaded "${result.filename}" (${result.chunk_count} chunks indexed).`);
-      setSelectedFile(null);
       onUploadSuccess();
     } catch (err) {
       setError(err.message);
     } finally {
       setUploading(false);
+      event.target.value = "";
     }
   }
 
   return (
     <div className="upload-panel">
       <input
+        ref={fileInputRef}
         type="file"
         accept="application/pdf"
         onChange={handleFileChange}
         disabled={uploading}
+        style={{ display: "none" }}
       />
-      <button onClick={handleUpload} disabled={!selectedFile || uploading}>
+      <button
+        className="upload-btn"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={uploading}
+      >
+        <IconUpload />
         {uploading ? "Uploading…" : "Upload PDF"}
       </button>
       {error && <p role="alert">{error}</p>}
-      {successMessage && <p>{successMessage}</p>}
+      {successMessage && <p className="empty-state">{successMessage}</p>}
     </div>
   );
 }
