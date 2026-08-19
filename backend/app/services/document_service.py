@@ -10,6 +10,7 @@ def chunk_pdf(
     document_id: str,
     chunk_size: int = 1000,
     chunk_overlap: int = 150,
+    filename: str | None = None,
 ) -> list[Document]:
     loader = PyPDFLoader(str(file_path))
     pages = loader.load()
@@ -19,7 +20,7 @@ def chunk_pdf(
     )
     chunks = splitter.split_documents(pages)
 
-    filename = Path(file_path).name
+    filename = filename or Path(file_path).name
     for chunk in chunks:
         page_number = chunk.metadata.get("page", 0) + 1
         chunk.metadata = {

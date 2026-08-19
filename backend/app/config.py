@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     google_api_key: str = ""
-    gemini_chat_model: str = "gemini-2.5-flash"
+    gemini_chat_model: str = "gemini-3.6-flash"
     gemini_embedding_model: str = "gemini-embedding-2-preview"
     data_dir: Path = Path("data")
     allowed_origins: list[str] = [

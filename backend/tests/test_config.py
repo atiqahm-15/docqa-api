@@ -9,7 +9,7 @@ def test_settings_reads_google_api_key_from_env(monkeypatch):
 
 def test_settings_has_default_gemini_models():
     settings = Settings(_env_file=None, google_api_key="x")
-    assert settings.gemini_chat_model == "gemini-2.5-flash"
+    assert settings.gemini_chat_model == "gemini-3.6-flash"
     assert settings.gemini_embedding_model == "gemini-embedding-2-preview"
 
 

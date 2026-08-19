@@ -5,7 +5,7 @@ primary_region = "sin"
 
 [env]
   DATA_DIR = "/data"
-  GEMINI_CHAT_MODEL = "gemini-2.5-flash"
+  GEMINI_CHAT_MODEL = "gemini-3.6-flash"
   GEMINI_EMBEDDING_MODEL = "gemini-embedding-2-preview"
   ALLOWED_ORIGINS = '["http://localhost:5173","http://localhost:3000"]'
 

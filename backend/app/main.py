@@ -62,7 +62,7 @@ async def upload_document(
 
     try:
         chunks = document_service.chunk_pdf(
-            file_path, document_id, settings.chunk_size, settings.chunk_overlap
+            file_path, document_id, settings.chunk_size, settings.chunk_overlap, filename=file.filename
         )
     except PdfReadError as exc:
         file_path.unlink(missing_ok=True)
