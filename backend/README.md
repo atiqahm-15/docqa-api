@@ -7,11 +7,24 @@ both embeddings and chat generation.
 ## Setup
 
 1. Create a virtual environment and install dependencies:
+
+   macOS/Linux:
    ```bash
    python3 -m venv .venv
    source .venv/bin/activate
    pip install -r requirements.txt
    ```
+
+   Windows (PowerShell):
+   ```powershell
+   python -m venv .venv
+   .venv\Scripts\Activate.ps1
+   pip install -r requirements.txt
+   ```
+
+   Always install into a virtual environment, not your global Python — this
+   project's pinned versions can conflict with unrelated tools installed
+   globally on your machine.
 
 2. Get a free Gemini API key from https://aistudio.google.com/apikey.
 
