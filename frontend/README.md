@@ -1,16 +1,41 @@
-# React + Vite
+# Document Q&A API — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Vite + React single-page app for the Document Q&A API. Upload a PDF, see it
+indexed, then ask questions about it with source citations.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## React Compiler
+2. Copy `.env.example` to `.env` (defaults already point at the Phase 1
+   backend's default local address, so this step is optional unless you're
+   running the backend somewhere else):
+   ```bash
+   cp .env.example .env
+   ```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+3. Make sure the backend is running (see `../backend/README.md`), then start
+   the dev server:
+   ```bash
+   npm run dev
+   ```
 
-## Expanding the Oxlint configuration
+4. Open http://localhost:5173.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Testing
+
+`api.js`'s response-parsing logic has a small `node:test` suite:
+```bash
+npm test
+```
+
+There's no automated component test suite in this phase (by design — see the
+project's design spec). Verify the UI manually, or run the scripted Playwright
+smoke pass (mocks the Gemini-dependent calls, so it works without a real API
+key):
+```bash
+npm run smoke
+```
